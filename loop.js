@@ -46,20 +46,9 @@ async function runAgenticLoop(file, question) {
   showAnswer(response.message);
   updateStep('answer', 'Done!', 'complete');
 
-  // ── Step 5: Follow-up question ─────────────────────────────
+  // ── Step 5: Enable multi-turn follow-ups ───────────────────
 
-  addStep('followup', 'Follow-Up', 'Asking a follow-up question...', 'thinking');
-
-  const followUp = await chatWithGateway(
-    "Based on your previous answer, what are the top 3 takeaways?",
-    (toolName, desc) => addStep(`followup-tool-${toolName}`, toolName, desc, 'thinking'),
-    (toolName, success, summary) => updateStep(`followup-tool-${toolName}`, summary, success ? 'complete' : 'error'),
-    (msg) => updateStep('followup', msg, 'thinking'),
-    { sessionId: response.sessionId }
-  );
-
-  updateStep('followup', 'Follow-up complete!', 'complete');
-  showAnswer(response.message + '<hr>' + followUp.message);
+  enableFollowUp(response.sessionId);
 }
 
 
@@ -78,4 +67,7 @@ async function runWeatherBriefing(question) {
 
   updateStep('weather', 'Briefing complete!', 'complete');
   showAnswer(response.message);
+
+  // Enable follow-ups for weather too
+  enableFollowUp(response.sessionId);
 }
