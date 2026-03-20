@@ -107,7 +107,7 @@ async function authenticate() {
   }
 
   const data = await res.json();
-  _authToken = data.token;
+  _authToken = data.access_token || data.token;
   return _authToken;
 }
 
