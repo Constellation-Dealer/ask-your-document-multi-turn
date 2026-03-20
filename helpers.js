@@ -224,14 +224,13 @@ async function _parseSseStream(body, onToolStart, onToolComplete, onThinking) {
           case 'message':
             finalMessage += (typeof data === 'string' ? data : data.content || data.message || '');
             break;
-          case 'complete':
-            if (data?.response) {
-              finalMessage = data.response.message || data.response.content || finalMessage;
-              if (data.response.sessionId) sessionId = data.response.sessionId;
-            } else {
-              finalMessage = (typeof data === 'string' ? data : data.message || data.content || finalMessage);
-            }
+          case 'complete': {
+            const completeText = typeof data === 'string' ? data
+              : data?.message || data?.content || data?.response?.message || data?.response?.content || '';
+            if (completeText) finalMessage = completeText;
+            if (data?.response?.sessionId) sessionId = data.response.sessionId;
             break;
+          }
         }
         eventType = null;
       }
