@@ -189,6 +189,53 @@ async function _parseSseStream(body, onToolStart, onToolComplete, onThinking) {
   let finalMessage = '';
   let sessionId = null;
   const toolCalls = [];
+  let eventType = null;
+
+  function getEventText(data) {
+    if (typeof data === 'string') return data;
+    if (!data || typeof data !== 'object') return '';
+    return data.message || data.content || data.response?.message || data.response?.content || '';
+  }
+
+  function processLine(line) {
+    if (line.startsWith('event: ')) {
+      eventType = line.slice(7).trim();
+      return;
+    }
+
+    if (!line.startsWith('data: ') || !eventType) return;
+
+    const dataStr = line.slice(6);
+    let data;
+    try { data = JSON.parse(dataStr); } catch { data = dataStr; }
+
+    // Capture sessionId from any event (it's on every SSE event)
+    if (data && data.sessionId && !sessionId) sessionId = data.sessionId;
+
+    switch (eventType) {
+      case 'tool_start':
+        if (onToolStart) onToolStart(data.toolName || data.name, data.description || '');
+        toolCalls.push({ name: data.toolName || data.name, status: 'started' });
+        break;
+      case 'tool_complete':
+        if (onToolComplete) onToolComplete(data.toolName || data.name, data.success !== false, data.summary || '');
+        break;
+      case 'thinking':
+        if (onThinking) onThinking(getEventText(data));
+        break;
+      case 'message':
+        finalMessage += getEventText(data);
+        break;
+      case 'complete': {
+        const text = getEventText(data);
+        if (text) finalMessage = text;
+        if (data?.response?.sessionId) sessionId = data.response.sessionId;
+        break;
+      }
+    }
+
+    eventType = null;
+  }
 
   while (true) {
     const { done, value } = await reader.read();
@@ -198,43 +245,14 @@ async function _parseSseStream(body, onToolStart, onToolComplete, onThinking) {
     const lines = buffer.split('\n');
     buffer = lines.pop();
 
-    let eventType = null;
     for (const line of lines) {
-      if (line.startsWith('event: ')) {
-        eventType = line.slice(7).trim();
-      } else if (line.startsWith('data: ') && eventType) {
-        const dataStr = line.slice(6);
-        let data;
-        try { data = JSON.parse(dataStr); } catch { data = dataStr; }
-
-        // Capture sessionId from any event (it's on every SSE event)
-        if (data && data.sessionId && !sessionId) sessionId = data.sessionId;
-
-        switch (eventType) {
-          case 'tool_start':
-            if (onToolStart) onToolStart(data.toolName || data.name, data.description || '');
-            toolCalls.push({ name: data.toolName || data.name, status: 'started' });
-            break;
-          case 'tool_complete':
-            if (onToolComplete) onToolComplete(data.toolName || data.name, data.success !== false, data.summary || '');
-            break;
-          case 'thinking':
-            if (onThinking) onThinking(data.message || data);
-            break;
-          case 'message':
-            finalMessage += (typeof data === 'string' ? data : data.content || data.message || '');
-            break;
-          case 'complete': {
-            const completeText = typeof data === 'string' ? data
-              : data?.message || data?.content || data?.response?.message || data?.response?.content || '';
-            if (completeText) finalMessage = completeText;
-            if (data?.response?.sessionId) sessionId = data.response.sessionId;
-            break;
-          }
-        }
-        eventType = null;
-      }
+      processLine(line);
     }
+  }
+
+  // Flush remaining buffer so the final event is never lost
+  if (buffer.trim()) {
+    processLine(buffer.trim());
   }
 
   return { message: finalMessage, toolCalls, sessionId };
