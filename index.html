@@ -51,14 +51,15 @@
   </div>
 
   <!-- ── Follow-Up Bar (fixed at bottom) ─────────────── -->
-  <div class="followup-bar" id="followupBar">
+  <div class="followup-bar disabled" id="followupBar">
     <div class="followup-inner">
-      <div class="followup-label">Follow-up <span id="followupSessionHint" class="followup-hint"></span></div>
+      <div class="followup-label">Follow-up <span id="followupSessionHint" class="followup-hint">— run the loop first, then enable with enableFollowUp()</span></div>
       <div class="followup-row">
         <input type="text" class="followup-input" id="followupInput"
-          placeholder="Ask a follow-up question..."
+          placeholder="Run the loop first, then call enableFollowUp(response.sessionId) in loop.js..."
+          disabled
           onkeydown="if(event.key==='Enter')handleFollowUp()">
-        <button class="followup-btn" id="followupBtn" onclick="handleFollowUp()">Send</button>
+        <button class="followup-btn" id="followupBtn" onclick="handleFollowUp()" disabled>Send</button>
       </div>
     </div>
   </div>

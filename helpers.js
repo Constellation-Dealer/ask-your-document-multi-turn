@@ -342,8 +342,12 @@ async function handleRun() {
   document.getElementById('errorBanner').classList.remove('visible');
   _currentSessionId = null;
   _followUpCount = 0;
-  document.getElementById('followupBar').classList.remove('visible');
-  document.body.classList.remove('has-followup');
+  const bar = document.getElementById('followupBar');
+  bar.classList.add('disabled');
+  document.getElementById('followupInput').disabled = true;
+  document.getElementById('followupInput').placeholder = 'Run the loop first, then call enableFollowUp(response.sessionId) in loop.js...';
+  document.getElementById('followupBtn').disabled = true;
+  document.getElementById('followupSessionHint').textContent = '— run the loop first, then enable with enableFollowUp()';
 
   try {
     await authenticate();
@@ -365,11 +369,15 @@ async function handleRun() {
  */
 function enableFollowUp(sessionId) {
   _currentSessionId = sessionId;
-  document.getElementById('followupBar').classList.add('visible');
-  document.body.classList.add('has-followup');
+  const bar = document.getElementById('followupBar');
+  bar.classList.remove('disabled');
+  const input = document.getElementById('followupInput');
+  input.disabled = false;
+  input.placeholder = 'Ask a follow-up question...';
+  document.getElementById('followupBtn').disabled = false;
   const hint = document.getElementById('followupSessionHint');
   if (hint) hint.textContent = `session: ${sessionId.substring(0, 8)}...`;
-  document.getElementById('followupInput').focus();
+  input.focus();
 }
 
 /**
