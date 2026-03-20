@@ -1,37 +1,45 @@
-# Ask Your Document — Gateway Chat with Agentic Loop
+# Ask Your Document — Bonus Challenges
 
-A hands-on exercise where you upload a PDF, wait for it to be indexed, and then ask questions about it through the TargetMCP Gateway's streaming Chat API. The Gateway's LLM agent calls the right tools automatically — you watch the agentic loop happen in real time via SSE events.
+Bonus challenges that build on the base [ask-your-document](https://github.com/Constellation-Dealer/ask-your-document) workshop. Steps 1–4 are pre-implemented — you add multi-turn conversations and weather tool calls.
+
+## Prerequisites
+
+You must have completed the base workshop first.
 
 ## Getting Started
 
 1. Clone this repo
-2. Copy `.env.example` to `.env` and fill in your credentials (from the Champion Portal → Workshop Details)
-3. Open `index.html` in your browser — no build step, no dependencies, no server
-4. Click **Run** to see Step 1 execute (and a prompt to implement the rest)
+2. Copy `.env.example` to `.env` and fill in your credentials (same values as the base workshop)
+3. **Important:** You must serve this on `http://localhost:5173` — the APIs only accept requests from this origin (CORS). Use any local server, for example:
+   ```
+   npx serve -l 5173
+   ```
+   Then open http://localhost:5173 in your browser.
+4. Click **Run** to see Steps 1–4 execute, then implement the challenges in `loop.js`
+
+> **Do NOT open `index.html` directly as a file** (`file://...`). The APIs will reject requests that don't come from `http://localhost:5173`.
 
 ## File Structure
 
 ```
-ask-your-document/
+ask-your-document-multi-turn/
 ├── .env.example    ← Copy to .env and fill in credentials
 ├── index.html      ← Page structure (no need to modify)
 ├── styles.css      ← UI styling (no need to modify)
 ├── helpers.js      ← Auth, API helpers, UI wiring (no need to modify)
-└── loop.js         ← YOUR CODE GOES HERE (the agentic loop)
+└── loop.js         ← YOUR CODE GOES HERE
 ```
 
 **You only need to edit `loop.js`.**
 
-## What You Write
+## Challenges
 
-Open `loop.js` and look for the `TODO: YOUR CODE HERE` comments. Step 1 (Upload) is done for you as an example. You fill in Steps 2-4 (~20 lines total):
+### Challenge 1: Multi-Turn Conversation
+Ask a follow-up question about your document without re-uploading. Use `response.sessionId` from the first call and pass it to the next `chatWithGateway()` call. The Gateway loads conversation history automatically.
 
-1. **Polling loop** — check ingestion status, wait, repeat until embeddings are ready
-2. **Ask the Gateway** — send your question to `chatWithGateway()` with SSE callbacks that render each tool call the LLM agent makes
-3. **Show the answer** — display the Gateway's composed response
-
-The key difference from a traditional RAG loop: you do NOT call `vector_search_media` or `get_document_chunks` yourself. The Gateway's LLM agent decides which tools to call and calls them for you. You just watch the SSE events stream in.
+### Challenge 2: Travel Weather Briefing
+Skip the PDF upload entirely and ask the Gateway about weather. The LLM will call `get_weather_forecast` and `get_weather_alerts` instead of document tools. Personalize it with your actual hackathon travel dates (arriving Sunday/Monday March 22–23, returning Saturday March 28).
 
 ## Configuration
 
-All configuration is in `.env`. See `.env.example` for the full list of values including API endpoints, credentials, and dealer context.
+All configuration is in `.env`. See `.env.example` for the full list of values including API endpoints, credentials, and dealer context. Use the same values from the base workshop.
