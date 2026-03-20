@@ -58,15 +58,10 @@ async function loadEnv() {
     // .env not found — credentials must be entered in the config panel
   }
 
-  // Prefill the config panel from .env values
-  if (_config.username) document.getElementById('username').value = _config.username;
-  if (_config.password) document.getElementById('password').value = _config.password;
-  if (_config.clientSecret) document.getElementById('clientSecret').value = _config.clientSecret;
-
-  // Hide the setup hint if all config is loaded
-  if (IDMS_URL && GATEWAY_URL && UMH_URL && DEALER_GUID &&
-      _config.username && _config.password && _config.clientSecret) {
-    document.getElementById('configHint').classList.add('hidden');
+  // Validate that all required config is present
+  if (!IDMS_URL || !GATEWAY_URL || !UMH_URL || !DEALER_GUID ||
+      !_config.username || !_config.password || !_config.clientSecret) {
+    console.warn('Missing .env config. Copy .env.example to .env and fill in all values.');
   }
 }
 
@@ -80,16 +75,16 @@ async function loadEnv() {
  * Returns the JWT token string.
  */
 async function authenticate() {
-  const username = document.getElementById('username').value.trim();
-  const password = document.getElementById('password').value.trim();
-  const clientSecret = document.getElementById('clientSecret').value.trim();
+  const username = _config.username;
+  const password = _config.password;
+  const clientSecret = _config.clientSecret;
 
   if (!IDMS_URL || !GATEWAY_URL || !UMH_URL || !DEALER_GUID) {
     throw new Error('Missing API config. Copy .env.example to .env and fill in IDMS_URL, GATEWAY_URL, UMH_URL, and DEALER_GUID.');
   }
 
   if (!username || !password || !clientSecret) {
-    throw new Error('Missing credentials. Fill in USERNAME, PASSWORD, and CLIENT_SECRET in .env or in the config panel above.');
+    throw new Error('Missing credentials. Fill in USERNAME, PASSWORD, and CLIENT_SECRET in .env.');
   }
 
   const res = await fetch(`${IDMS_URL}/api/v1/Account/token`, {
