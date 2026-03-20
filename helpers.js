@@ -300,6 +300,8 @@ function sleep(ms) {
 // ═══════════════════════════════════════════════════════════════
 
 let selectedFile = null;
+let _currentSessionId = null;
+let _followUpCount = 0;
 
 const uploadArea = document.getElementById('uploadArea');
 const fileInput = document.getElementById('fileInput');
@@ -338,6 +340,10 @@ async function handleRun() {
   document.getElementById('loopTrace').innerHTML = '';
   document.getElementById('answerSection').classList.remove('visible');
   document.getElementById('errorBanner').classList.remove('visible');
+  _currentSessionId = null;
+  _followUpCount = 0;
+  document.getElementById('followupBar').classList.remove('visible');
+  document.body.classList.remove('has-followup');
 
   try {
     await authenticate();
@@ -350,6 +356,71 @@ async function handleRun() {
   } finally {
     btn.disabled = false;
     btn.textContent = 'Run';
+  }
+}
+
+/**
+ * Show the follow-up bar and store the session ID.
+ * Call this from loop.js after the first chatWithGateway response.
+ */
+function enableFollowUp(sessionId) {
+  _currentSessionId = sessionId;
+  document.getElementById('followupBar').classList.add('visible');
+  document.body.classList.add('has-followup');
+  const hint = document.getElementById('followupSessionHint');
+  if (hint) hint.textContent = `session: ${sessionId.substring(0, 8)}...`;
+  document.getElementById('followupInput').focus();
+}
+
+/**
+ * Get the current session ID (for use in loop.js).
+ */
+function getSessionId() {
+  return _currentSessionId;
+}
+
+// Follow-up button handler
+async function handleFollowUp() {
+  const input = document.getElementById('followupInput');
+  const question = input.value.trim();
+  if (!question || !_currentSessionId) return;
+
+  const btn = document.getElementById('followupBtn');
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  input.disabled = true;
+
+  _followUpCount++;
+  const stepId = `followup-${_followUpCount}`;
+
+  try {
+    addStep(stepId, `Follow-Up #${_followUpCount}`, question, 'thinking');
+
+    const response = await chatWithGateway(
+      question,
+      (toolName, desc) => addStep(`${stepId}-tool-${toolName}`, toolName, desc, 'thinking'),
+      (toolName, success, summary) => updateStep(`${stepId}-tool-${toolName}`, summary, success ? 'complete' : 'error'),
+      (msg) => updateStep(stepId, msg, 'thinking'),
+      { sessionId: _currentSessionId }
+    );
+
+    updateStep(stepId, 'Done!', 'complete');
+
+    // Append follow-up answer below existing answer
+    const box = document.getElementById('answerBox');
+    box.innerHTML += `<hr style="margin:1.25rem 0;border:none;border-top:2px solid var(--border)">
+      <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-light);font-weight:700;margin-bottom:0.5rem">Follow-Up #${_followUpCount}</div>
+      ${response.message}`;
+
+    if (response.sessionId) _currentSessionId = response.sessionId;
+    input.value = '';
+  } catch (err) {
+    updateStep(stepId, `Error: ${err.message}`, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Send';
+    input.disabled = false;
+    input.focus();
   }
 }
 

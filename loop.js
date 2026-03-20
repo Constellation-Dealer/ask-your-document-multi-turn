@@ -71,33 +71,27 @@ async function runAgenticLoop(file, question) {
   updateStep('answer', 'Done!', 'complete');
 
 
-  // ── Step 5: Follow-up question ─────────────────────────────
+  // ── Step 5: Enable multi-turn follow-ups ───────────────────
   //
   // TODO: YOUR CODE HERE
   //
   // The `response` object from Step 3 contains a `sessionId`.
-  // Pass it back to chatWithGateway to continue the conversation.
-  // The Gateway will automatically load the previous turn — you
-  // don't need to send the earlier messages yourself.
+  // Call enableFollowUp(response.sessionId) to show the follow-up
+  // input bar at the bottom of the screen. The bar handles sending
+  // follow-up questions using the same session — the Gateway
+  // automatically loads conversation history.
   //
-  // 1. Call addStep('followup', 'Follow-Up', 'Asking a follow-up question...', 'thinking')
+  // Just add this one line:
   //
-  // 2. Call chatWithGateway with a follow-up question and the sessionId:
+  //    enableFollowUp(response.sessionId);
   //
-  //    const followUp = await chatWithGateway(
-  //      "Based on your previous answer, what are the top 3 takeaways?",
-  //      (toolName, desc) => addStep(`followup-tool-${toolName}`, toolName, desc, 'thinking'),
-  //      (toolName, success, summary) => updateStep(`followup-tool-${toolName}`, summary, success ? 'complete' : 'error'),
-  //      (msg) => updateStep('followup', msg, 'thinking'),
-  //      { sessionId: response.sessionId }
-  //    );
+  // Once enabled, try typing follow-up questions like:
+  //   "Summarize that in 3 bullet points"
+  //   "Which page has the most critical information?"
+  //   "Explain the first point in more detail"
   //
-  // 3. Show the follow-up answer:
-  //    updateStep('followup', 'Follow-up complete!', 'complete')
-  //    showAnswer(response.message + '<hr>' + followUp.message)
-  //
-  // Watch the loop trace — the LLM should NOT call vector_search_media
-  // again. It already has context from the previous turn.
+  // Watch the loop trace — the LLM should NOT call
+  // vector_search_media again. It already has context.
 
 }
 
