@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ask Your Document — Gateway Chat with Agentic Loop</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ── Header ──────────────────────────────────────── -->
+  <header>
+    <h1>Ask Your <span>Document</span></h1>
+  </header>
+
+  <!-- ── Config Panel (prefilled from .env) ──────────── -->
+  <div class="live-config visible" id="liveConfig">
+    <div class="config-hint" id="configHint">
+      Copy <code>.env.example</code> to <code>.env</code> and fill in your credentials from the Champion Portal.
+    </div>
+    <div class="config-grid">
+      <div>
+        <label for="username">Username</label>
+        <!-- ✏️ CONFIGURE: set USERNAME in .env -->
+        <input type="text" id="username" placeholder="Set USERNAME in .env">
+      </div>
+      <div>
+        <label for="password">Password</label>
+        <!-- ✏️ CONFIGURE: set PASSWORD in .env -->
+        <input type="password" id="password" placeholder="Set PASSWORD in .env">
+      </div>
+      <div class="config-full">
+        <label for="clientSecret">Client Secret</label>
+        <!-- ✏️ CONFIGURE: set CLIENT_SECRET in .env -->
+        <input type="password" id="clientSecret" placeholder="Set CLIENT_SECRET in .env">
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Main Content ────────────────────────────────── -->
+  <div class="container">
+
+    <!-- Upload Area -->
+    <div class="upload-area" id="uploadArea">
+      <div class="upload-icon">&#128196;</div>
+      <div class="upload-text">
+        <strong>Choose a PDF</strong> or drag it here
+        <br><span style="font-size:0.8rem">Max 10 MB</span>
+      </div>
+      <div class="file-name" id="fileName"></div>
+    </div>
+    <input type="file" id="fileInput" accept=".pdf,application/pdf">
+
+    <!-- Question + Run -->
+    <div class="question-row">
+      <input type="text" class="question-input" id="questionInput"
+        placeholder="What are the safety warnings in this manual?"
+        value="What are the safety warnings in this manual?">
+      <button class="run-btn" id="runBtn" onclick="handleRun()">Run</button>
+    </div>
+
+    <!-- Error Banner -->
+    <div class="error-banner" id="errorBanner"></div>
+
+    <!-- Loop Trace -->
+    <div class="section-header">LOOP TRACE</div>
+    <div class="loop-trace" id="loopTrace"></div>
+
+    <!-- Answer -->
+    <div class="answer-section" id="answerSection">
+      <div class="section-header">ANSWER</div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+
+  </div>
+
+  <!--
+    ┌─────────────────────────────────────────────────────────┐
+    │  FILE GUIDE                                             │
+    │                                                         │
+    │  .env.example — Copy to .env and fill in credentials    │
+    │  styles.css   — UI styling (do not modify)              │
+    │  helpers.js   — Auth, API helpers, UI wiring            │
+    │                 (do not modify)                          │
+    │  loop.js      — YOUR CODE GOES HERE                     │
+    │                 Open this file and fill in the TODOs     │
+    │  index.html   — This file (page structure)              │
+    └─────────────────────────────────────────────────────────┘
+  -->
+
+  <script src="helpers.js"></script>
+  <script src="loop.js"></script>
+
+</body>
+</html>
