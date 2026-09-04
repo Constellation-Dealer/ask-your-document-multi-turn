@@ -34,10 +34,11 @@ async function runAgenticLoop(file, question) {
     updateStep('poll', `ingestionStatus: ${status.ingestionStatus}`, 'waiting');
 
     if (Date.now() > deadline) {
-      throw new Error(
+      const stalled =
         `TargetUMH is still at ${status.ingestionStatus} after two minutes, so the answer would ` +
-        `have nothing to retrieve. Check the media pipeline before retrying.`
-      );
+        `have nothing to retrieve. Check the media pipeline before retrying.`;
+      updateStep('poll', stalled, 'error');
+      throw new Error(stalled);
     }
 
     await sleep(1000);
@@ -47,7 +48,14 @@ async function runAgenticLoop(file, question) {
   // Not in flight any more, so it either succeeded or it stopped for a reason
   // worth telling the participant about.
   const problem = explainIngestionStop(status.ingestionStatus);
-  if (problem) throw new Error(problem);
+  if (problem) {
+    // Put the reason on the Poll card itself. Without this the step keeps its
+    // last in-flight text -- still claiming to be polling -- while the error
+    // turns up somewhere else entirely, which is a confusing shape for the one
+    // failure this whole change exists to make legible.
+    updateStep('poll', problem, 'error');
+    throw new Error(problem);
+  }
 
   updateStep('poll', 'Embeddings ready!', 'complete');
 
