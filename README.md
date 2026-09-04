@@ -10,7 +10,9 @@ You must have completed the base workshop first.
 
 1. Clone this repo
 2. Copy `.env.example` to `.env` and fill in your credentials (same values as the base workshop)
-3. **Important:** You must serve this on `http://localhost:5173` — the APIs only accept requests from this origin (CORS). Use any local server, for example:
+3. **Important:** Serve this over `http://localhost` — the APIs allowlist specific origins (CORS).
+   Both `http://localhost:5173` and `http://localhost:3000` are allowlisted, so if the base workshop
+   is still running on 3000 you can use either. Use any local server, for example:
    ```
    npx serve -l 5173
    ```
@@ -23,7 +25,9 @@ You must have completed the base workshop first.
 > nothing for the agent to retrieve. Step 2 now stops and says so instead of waiting for embeddings
 > that will never arrive.
 
-> **Do NOT open `index.html` directly as a file** (`file://...`). The APIs will reject requests that don't come from `http://localhost:5173`.
+> **Do NOT open `index.html` directly as a file** (`file://...`), and use `localhost`, not `127.0.0.1`.
+> Neither is an allowlisted origin — the APIs send back no CORS header, so the browser blocks every
+> call before your code sees a response.
 
 ## File Structure
 
