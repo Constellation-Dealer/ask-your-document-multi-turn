@@ -12,6 +12,11 @@
 //  Available helpers (see helpers.js for full docs):
 //    uploadPdf(file)          → { id, ingestionStatus, ... }
 //    getMediaStatus(id)       → { ingestionStatus, ... }
+//    isIngestionInFlight(s)   → true while UMH is still working on the file;
+//                               anything else is terminal
+//    explainIngestionStop(s)  → message for a terminal status that is not
+//                               Completed (null when it is), so a Skipped
+//                               scan reports instead of spinning
 //    chatWithGateway(message, onToolStart, onToolComplete, onThinking, options)
 //                             → { message, toolCalls, sessionId }
 //        options.sessionId    — pass the sessionId from a previous response
@@ -44,13 +49,43 @@ async function runAgenticLoop(file, question) {
   // ── Step 2: Poll until ready (done) ────────────────────────
 
   addStep('poll', 'Poll until ready', 'Checking ingestion status...', 'waiting');
-  while (true) {
-    const status = await getMediaStatus(upload.id);
+
+  // Wait only while UMH says it is still working. Everything else is terminal.
+  //
+  // Writing it the other way round -- break on Completed, throw on Failed --
+  // leaves Skipped matching neither branch, and Skipped is what UMH returns for
+  // a PDF with no text layer, i.e. a scan. The loop would then spin forever
+  // with `ingestionStatus: Skipped` ticking on screen and no error at all.
+  const deadline = Date.now() + 120000;
+  let status = await getMediaStatus(upload.id);
+
+  while (isIngestionInFlight(status.ingestionStatus)) {
     updateStep('poll', `ingestionStatus: ${status.ingestionStatus}`, 'waiting');
-    if (status.ingestionStatus === 'Completed') break;
-    if (status.ingestionStatus === 'Failed') throw new Error('Embedding ingestion failed');
+
+    if (Date.now() > deadline) {
+      const stalled =
+        `TargetUMH is still at ${status.ingestionStatus} after two minutes, so the answer would ` +
+        `have nothing to retrieve. Check the media pipeline before retrying.`;
+      updateStep('poll', stalled, 'error');
+      throw new Error(stalled);
+    }
+
     await sleep(1000);
+    status = await getMediaStatus(upload.id);
   }
+
+  // Not in flight any more, so it either succeeded or it stopped for a reason
+  // worth telling the participant about.
+  const problem = explainIngestionStop(status.ingestionStatus);
+  if (problem) {
+    // Put the reason on the Poll card itself. Without this the step keeps its
+    // last in-flight text -- still claiming to be polling -- while the error
+    // turns up somewhere else entirely, which is a confusing shape for the one
+    // failure this whole change exists to make legible.
+    updateStep('poll', problem, 'error');
+    throw new Error(problem);
+  }
+
   updateStep('poll', 'Embeddings ready!', 'complete');
 
   // ── Step 3: Ask the Gateway (done) ─────────────────────────
@@ -113,9 +148,10 @@ async function runAgenticLoop(file, question) {
 //   3. You won't need to select a PDF — just type a question
 //      and click Run
 //
-// Personalize it! You're traveling to the hackathon:
-//   - Arriving: Sunday March 22 or Monday March 23
-//   - Returning: Saturday March 28
+// Personalize it! You're traveling to Perseus EPIC in Whistler,
+// British Columbia, on Monday 14 September 2026:
+//   - Arriving: Sunday 13 September (most people fly into Vancouver)
+//   - Returning: Tuesday 15 September
 //   - Ask about YOUR travel cities and connecting flights
 
 /*
@@ -143,15 +179,17 @@ async function runWeatherBriefing(question) {
   // get_weather_alerts. Same Gateway, same code, different tools.
   //
   // Example questions to try:
-  //   "What's the weather forecast for Dallas this Sunday and Monday?"
-  //   "Are there any weather alerts near Toronto for this weekend?"
-  //   "I'm flying into Dallas on Sunday March 22 and returning
-  //    Saturday March 28. Any weather I should prepare for?"
+  //   "What's the weather forecast for Whistler, British Columbia this
+  //    coming Sunday and Monday?"
+  //   "Are there any weather alerts near Vancouver, Canada for this weekend?"
+  //   "I'm flying into Vancouver on Sunday 13 September and returning
+  //    Tuesday 15 September. Any weather I should be aware of?"
   //
   // BONUS: Combine with Challenge 1 — use response.sessionId
   // to ask follow-ups:
   //   "Should I pack an umbrella?"
-  //   "What about my connecting flight through Chicago?"
+  //   "What about the drive up to Whistler on the Monday?"
+  //   "And the return flight out of Vancouver on Tuesday 15 September?"
 
 }
 */
