@@ -15,7 +15,13 @@ You must have completed the base workshop first.
    npx serve -l 5173
    ```
    Then open http://localhost:5173 in your browser.
-4. Click **Run** to see Steps 1–4 execute, then implement the challenges in `loop.js`
+4. Pick a PDF whose text you can select in a reader, type a question, and click **Run** to see
+   Steps 1–4 execute, then implement the challenges in `loop.js`
+
+> **Bring a text PDF, not a scan.** TargetUMH answers `ingestionStatus: Skipped` for a PDF with no
+> text layer — a flatbed scan, or a phone photo saved as a PDF. Nothing gets embedded, so there is
+> nothing for the agent to retrieve. Step 2 now stops and says so instead of waiting for embeddings
+> that will never arrive.
 
 > **Do NOT open `index.html` directly as a file** (`file://...`). The APIs will reject requests that don't come from `http://localhost:5173`.
 
